@@ -1,0 +1,10 @@
+{
+    "name": "drupal/killbill-drupal-plugin",
+    "type": "drupal-module",
+    "description": "Port to D8 of https://github.com/killbill/killbill-drupal-plugin",
+    "license": "GPL-2.0+",
+    "require": {
+        "drupal/core": "~8.1"
+    },
+    "minimum-stability": "dev"
+}
