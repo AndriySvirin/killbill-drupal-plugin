@@ -1,5 +1,6 @@
 {
     "name": "AndriySvirin/killbill-drupal-plugin",
+    "version": "dev",
     "type": "drupal-module",
     "description": "Port to D8 of https://github.com/killbill/killbill-drupal-plugin",
     "license": "GPL-2.0+",
