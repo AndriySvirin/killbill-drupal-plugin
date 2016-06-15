@@ -56,7 +56,7 @@ class DefaultController extends ControllerBase {
             return $output;
         }
 
-        $catalog = new Killbill_Catalog();
+        $catalog = new \Killbill_Catalog;
         $catalog->initialize();
 
         $header = [

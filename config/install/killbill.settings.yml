@@ -1,5 +1,5 @@
 killbill_listener_key: ''
 killbill_push_logging: false
 killbill_server_url: 'http://127.0.0.1:8080'
-killbill_tenant_api_key: null
-killbill_tenant_api_secret: null
+killbill_tenant_api_user: null
+killbill_tenant_api_password: null

@@ -5,7 +5,7 @@ namespace Drupal\killbill;
 /**
  * Helpers functions.
  */
-abstract class KillbillHelpers {
+class KillbillHelpers {
 
     /**
      * Retrive account.
@@ -29,16 +29,17 @@ abstract class KillbillHelpers {
         if (empty($settings)) {
             $settings = array(
                 'serverUrl' => \Drupal::config('killbill.settings')->get('killbill_server_url'),
-                'apiKey' => \Drupal::config('killbill.settings')->get('killbill_tenant_api_key'),
-                'apiSecret' => \Drupal::config('killbill.settings')->get('killbill_tenant_api_secret'),
+                'apiUser' => \Drupal::config('killbill.settings')->get('killbill_tenant_api_user'),
+                'apiPassword' => \Drupal::config('killbill.settings')->get('killbill_tenant_api_password'),
             );
         }
 
-        if (($path = libraries_get_path('killbill')) && file_exists($path . '/lib/killbill.php')) {
-            require_once $path . '/lib/killbill.php';
-            Killbill_Client::$serverUrl = $settings['serverUrl'];
-            Killbill_Client::$apiKey = $settings['apiKey'];
-            Killbill_Client::$apiSecret = $settings['apiSecret'];
+        $path = libraries_get_path('killbill-client-php');
+        if ($path && file_exists(DRUPAL_ROOT . '/' . $path . '/lib/killbill.php')) {
+            require_once DRUPAL_ROOT . '/' . $path . '/lib/killbill.php';
+            \Killbill_Client::$serverUrl = $settings['serverUrl'];
+            \Killbill_Client::$apiUser = $settings['apiUser'];
+            \Killbill_Client::$apiPassword = $settings['apiPassword'];
 
             \Drupal::logger('killbill')->info('Successfully registered the Killbill PHP library.', array());
             return TRUE;
