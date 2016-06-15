@@ -1,0 +1,14 @@
+killbill.settings:
+  type: mapping
+  label: Settings
+  mapping:
+    killbill_listener_key:
+      type: string
+    killbill_push_logging:
+      type: boolean
+    killbill_server_url:
+      type: string
+    killbill_tenant_api_key:
+      type: 'NULL'
+    killbill_tenant_api_secret:
+      type: 'NULL'

@@ -428,10 +428,10 @@ function killbill_schema() {
 
 function killbill_install() {
     // Initialize the Killbill listener key variable.
-    variable_set('killbill_listener_key', substr(drupal_hash_base64(REQUEST_TIME), 0, 8));
+    \Drupal::configFactory()->getEditable('killbill.settings')->set('killbill_listener_key', substr(\Drupal\Component\Utility\Crypt::hashBase64(REQUEST_TIME), 0, 8))->save();
 }
 
 function killbill_uninstall() {
     // Remove the push notification settings.
-    variable_del('killbill_listener_key');
+    \Drupal::configFactory()->getEditable('killbill.settings')->clear('killbill_listener_key')->save();
 }

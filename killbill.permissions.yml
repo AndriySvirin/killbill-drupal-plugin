@@ -1,0 +1,4 @@
+administer killbill:
+  title: 'Administer Killbill'
+  description: 'Allows users to configure site-wide Killbill settings and grants access to all integration activities.'
+  restrict access: TRUE

@@ -1,0 +1,10 @@
+killbill.settings_form:
+  route_name: killbill.settings_form
+  title: Settings
+  weight: -10
+  base_route: killbill.settings_form
+killbill.catalog:
+  route_name: killbill.catalog
+  title: Catalog
+  weight: -5
+  base_route: killbill.settings_form

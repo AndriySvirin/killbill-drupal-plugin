@@ -1,92 +1,18 @@
 <?php
-/*
- * Copyright 2011-2012 Ning, Inc.
- *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
+
+/**
+ * Implements hook_user_view().
  */
-
-include_once dirname(__FILE__) . '/includes/killbill.account.inc';
-
-function killbill_menu() {
-    $items = array();
-
-    // Listener API for Killbill push notifications
-    $items['killbill/listener/%'] = array(
-        'page callback' => 'killbill_process_push_notification',
-        'page arguments' => array(2),
-        'access callback' => TRUE,
-        'type' => MENU_CALLBACK,
-    );
-    $items['killbill/listener/%/%'] = array(
-        'page callback' => 'killbill_process_push_notification',
-        'page arguments' => array(2, 3),
-        'access callback' => TRUE,
-        'type' => MENU_CALLBACK,
-    );
-
-    // Define administrative menu items
-    $items['admin/config/services/killbill'] = array(
-        'title' => 'Killbill',
-        'description' => 'Configure your Killbill API settings and points of integration with Drupal.',
-        'page callback' => 'drupal_get_form',
-        'page arguments' => array('killbill_settings_form'),
-        'access arguments' => array('administer killbill'),
-        'file' => 'includes/killbill.admin.inc',
-    );
-    $items['admin/config/services/killbill/settings'] = array(
-        'title' => 'Settings',
-        'description' => 'Configure your Killbill API settings and points of integration with Drupal.',
-        'type' => MENU_DEFAULT_LOCAL_TASK,
-        'weight' => -10,
-    );
-    $items['admin/config/services/killbill/catalog'] = array(
-        'title' => 'Catalog',
-        'description' => 'View your Catalog.',
-        'page callback' => 'killbill_catalog',
-        'access arguments' => array('administer killbill'),
-        'type' => MENU_LOCAL_TASK,
-        'weight' => -5,
-        'file' => 'includes/killbill.admin.inc',
-    );
-
-    return $items;
-}
-
-function killbill_permission() {
-    $permissions = array(
-        'administer killbill' => array(
-            'title' => t('Administer Killbill'),
-            'description' => t('Allows users to configure site-wide Killbill settings and grants access to all integration activities.'),
-            'restrict access' => TRUE,
-        ),
-    );
-
-    return $permissions;
-}
-
-function killbill_help($path, $arg) {
-}
-
-function killbill_user_view($account, $view_mode, $langcode) {
-    if (!$account->uid || !user_access('administer killbill')) {
+function killbill_user_view(array &$build, \Drupal\user\UserInterface $account, $view_mode, $langcode) {
+    if (!$account->id() || !\Drupal::currentUser()->hasPermission('administer killbill')) {
         return;
     }
 
-    if (!killbill_client_initialize()) {
+    if (!Drupal\killbill\KillbillHelpers::clientInitialize()) {
         return;
     }
 
-    if (!($killbill_account = killbill_retrieve_account($account))) {
+    if (!($killbill_account = Drupal\killbill\KillbillHelpers::retrieveAccount($account))) {
         return;
     }
 
@@ -112,37 +38,40 @@ function killbill_user_view($account, $view_mode, $langcode) {
     $account->content['killbill_account']['account_email'] = array(
         '#type' => 'user_profile_item',
         '#title' => t('Account e-mail address'),
-        '#markup' => check_plain($killbill_account->email),
+        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->email),
     );
 
     $account->content['killbill_account']['account_currency'] = array(
         '#type' => 'user_profile_item',
         '#title' => t('Account currency'),
-        '#markup' => check_plain($killbill_account->currency),
+        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->currency),
     );
 
     $account->content['killbill_account']['account_timeZone'] = array(
         '#type' => 'user_profile_item',
         '#title' => t('Account time zone'),
-        '#markup' => check_plain($killbill_account->timeZone),
+        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->timeZone),
     );
 
     $account->content['killbill_account']['account_kbid'] = array(
         '#type' => 'user_profile_item',
         '#title' => t('Killbill account id'),
-        '#markup' => check_plain($killbill_account->accountId),
+        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->accountId),
     );
 }
 
-function killbill_user_insert(&$edit, $account, $category) {
-    if (!killbill_client_initialize()) {
+/**
+ * Implements hook_user_insert().
+ */
+function killbill_user_insert(\Drupal\user\UserInterface $account) {
+    if (!Drupal\killbill\KillbillHelpers::clientInitialize()) {
         return;
     }
 
     $accountData = new Killbill_Account();
-    $accountData->externalKey = $account->uid;
-    $accountData->name = $account->name;
-    $accountData->email = $account->mail;
+    $accountData->externalKey = $account->id();
+    $accountData->name = $account->getUsername();
+    $accountData->email = $account->getEmail();
     $accountData->currency = 'USD';
     $accountData->paymentMethodId = null;
     $accountData->address1 = null;
@@ -157,72 +86,5 @@ function killbill_user_insert(&$edit, $account, $category) {
     }
 
     global $base_root;
-    $accountData->create($base_root, "DRUPAL", "DRUPAL_HOOK_USER_INSERT::" . ip_address());
-}
-
-/**
- * Processes an incoming push notification.
- *
- * Killbill can be configured to send notifications, e.g. when a new account is created
- * or when a subscription event occurs.
- *
- * By default, this open-source module will listen to these notifications to
- * mirror accounts and subscriptions information in the Drupal database.
- * Other modules can react to incoming push notifications by implementing
- * hook_killbill_process_push_notification(). This can be useful to extend this module
- * and implement business logic reactions specific to your app.
- */
-function killbill_process_push_notification($key) {
-    $notification = NULL;
-
-    // Ensure the push notification was sent to the proper URL
-    if ($key != variable_get('killbill_listener_key', '')) {
-        // Log the failed attempt and bail.
-        watchdog('killbill', 'Incoming push notification did not contain the proper URL key.', array(), WATCHDOG_WARNING);
-        return;
-    }
-
-    if (!killbill_client_initialize()) {
-        return;
-    }
-
-    // TODO - this will probably be json
-    $notification = "TODO";
-
-    // Bail if this is an empty or invalid notification
-    if (empty($notification)) {
-        return;
-    }
-
-    // Log the incoming push notification if enabled
-    if (variable_get('killbill_push_logging', FALSE)) {
-        watchdog('killbill', 'Incoming push notification: !notification', array('!notification' => '<pre>' . check_plain(print_r($notification, TRUE)) . '</pre>'), WATCHDOG_NOTICE);
-    }
-
-    module_invoke_all('killbill_process_push_notification', $notification);
-}
-
-function killbill_client_initialize($settings = NULL) {
-    // If no settings array was given, use the default account settings.
-    if (empty($settings)) {
-        $settings = array(
-            'serverUrl' => variable_get('killbill_server_url', 'http://127.0.0.1:8080'),
-            'apiKey' => variable_get('killbill_tenant_api_key', NULL),
-            'apiSecret' => variable_get('killbill_tenant_api_secret', NULL),
-        );
-    }
-
-    if (($path = libraries_get_path('killbill')) && file_exists($path . '/lib/killbill.php')) {
-        require_once $path . '/lib/killbill.php';
-        Killbill_Client::$serverUrl = $settings['serverUrl'];
-        Killbill_Client::$apiKey = $settings['apiKey'];
-        Killbill_Client::$apiSecret = $settings['apiSecret'];
-
-        watchdog('killbill', 'Successfully registered the Killbill PHP library.', array(), WATCHDOG_INFO);
-        return TRUE;
-    }
-    else {
-        watchdog('killbill', 'Could not find the Killbill PHP client library in sites/all/libraries/killbill.', array(), WATCHDOG_ERROR);
-        return FALSE;
-    }
+    $accountData->create($base_root, "DRUPAL", "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp());
 }

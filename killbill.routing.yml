@@ -1,0 +1,24 @@
+killbill.process_push_notification:
+  path: '/killbill/listener/{key}'
+  defaults:
+    _controller: '\Drupal\killbill\Controller\DefaultController::processPushNotification'
+  requirements:
+    _access: 'true'
+killbill.settings_form:
+  path: /admin/config/services/killbill
+  defaults:
+    _title: Killbill
+    _form: \Drupal\killbill\Form\KillbillSettingsForm
+  options:
+    _admin_route: TRUE
+  requirements:
+    _permission: 'administer killbill'
+killbill.catalog:
+  path: /admin/config/services/killbill/catalog
+  defaults:
+    _title: Catalog
+    _controller: '\Drupal\killbill\Controller\DefaultController::catalog'
+  options:
+    _admin_route: TRUE
+  requirements:
+    _permission: 'administer killbill'

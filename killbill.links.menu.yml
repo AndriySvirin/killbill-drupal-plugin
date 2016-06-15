@@ -1,0 +1,10 @@
+killbill.settings_form:
+  route_name: killbill.settings_form
+  title: Killbill
+  description: 'Configure your Killbill API settings and points of integration with Drupal.'
+  parent: system.admin_config_services
+killbill.catalog:
+  title: Catalog
+  description: 'View your Catalog.'
+  route_name: killbill.catalog
+  parent: killbill.settings_form
