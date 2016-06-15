@@ -18,7 +18,7 @@ class DefaultController extends ControllerBase {
         $notification = NULL;
 
         // Ensure the push notification was sent to the proper URL
-        if ($key != \Drupal::config('killbill.settings')->get('killbill_listener_key')) {
+        if ($key != \Drupal::config('killbill.settings')->get('listener_key')) {
             // Log the failed attempt and bail.
             \Drupal::logger('killbill')->warning('Incoming push notification did not contain the proper URL key.', []);
             return;
@@ -37,7 +37,7 @@ class DefaultController extends ControllerBase {
         }
 
         // Log the incoming push notification if enabled
-        if (\Drupal::config('killbill.settings')->get('killbill_push_logging')) {
+        if (\Drupal::config('killbill.settings')->get('push_logging')) {
             \Drupal::logger('killbill')->notice('Incoming push notification: !notification', [
                 '!notification' => '<pre>' . \Drupal\Component\Utility\SafeMarkup::checkPlain(print_r($notification, TRUE)) . '</pre>'
             ]);

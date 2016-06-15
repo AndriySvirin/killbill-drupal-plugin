@@ -13,7 +13,7 @@ class KillbillHelpers {
      * @return type
      */
     public static function retrieveAccount(\Drupal\user\UserInterface $user) {
-        $killbill_account = new Killbill_Account();
+        $killbill_account = new \Killbill_Account();
         $killbill_account->externalKey = $user->id();
         return $killbill_account->get();
     }
@@ -28,18 +28,18 @@ class KillbillHelpers {
         // If no settings array was given, use the default account settings.
         if (empty($settings)) {
             $settings = array(
-                'serverUrl' => \Drupal::config('killbill.settings')->get('killbill_server_url'),
-                'apiUser' => \Drupal::config('killbill.settings')->get('killbill_tenant_api_user'),
-                'apiPassword' => \Drupal::config('killbill.settings')->get('killbill_tenant_api_password'),
+                'server_url' => \Drupal::config('killbill.settings')->get('server_url'),
+                'api_user' => \Drupal::config('killbill.settings')->get('api_user'),
+                'api_password' => \Drupal::config('killbill.settings')->get('api_password'),
             );
         }
 
         $path = libraries_get_path('killbill-client-php');
         if ($path && file_exists(DRUPAL_ROOT . '/' . $path . '/lib/killbill.php')) {
             require_once DRUPAL_ROOT . '/' . $path . '/lib/killbill.php';
-            \Killbill_Client::$serverUrl = $settings['serverUrl'];
-            \Killbill_Client::$apiUser = $settings['apiUser'];
-            \Killbill_Client::$apiPassword = $settings['apiPassword'];
+            \Killbill_Client::$serverUrl = $settings['server_url'];
+            \Killbill_Client::$apiUser = $settings['api_user'];
+            \Killbill_Client::$apiPassword = $settings['api_password'];
 
             \Drupal::logger('killbill')->info('Successfully registered the Killbill PHP library.', array());
             return TRUE;

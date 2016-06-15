@@ -1,20 +1,8 @@
 <?php
-/*
- * Copyright 2011-2012 Ning, Inc.
- *
- * Ning licenses this file to you under the Apache License, version 2.0
- * (the "License"); you may not use this file except in compliance with the
- * License.  You may obtain a copy of the License at:
- *
- *    http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  See the
- * License for the specific language governing permissions and limitations
- * under the License.
- */
 
+/**
+ * Implements hook_schema().
+ */
 function killbill_schema() {
     // Notes:
     // * We don't keep locally historical information.
@@ -428,10 +416,10 @@ function killbill_schema() {
 
 function killbill_install() {
     // Initialize the Killbill listener key variable.
-    \Drupal::configFactory()->getEditable('killbill.settings')->set('killbill_listener_key', substr(\Drupal\Component\Utility\Crypt::hashBase64(REQUEST_TIME), 0, 8))->save();
+    \Drupal::configFactory()->getEditable('killbill.settings')->set('listener_key', substr(\Drupal\Component\Utility\Crypt::hashBase64(REQUEST_TIME), 0, 8))->save();
 }
 
 function killbill_uninstall() {
     // Remove the push notification settings.
-    \Drupal::configFactory()->getEditable('killbill.settings')->clear('killbill_listener_key')->save();
+    \Drupal::configFactory()->getEditable('killbill.settings')->clear('listener_key')->save();
 }
