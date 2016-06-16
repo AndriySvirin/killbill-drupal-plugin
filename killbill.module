@@ -61,3 +61,86 @@ function killbill_user_view(array &$build, \Drupal\user\UserInterface $account, 
 function killbill_user_insert(\Drupal\user\UserInterface $account) {
   Drupal\killbill\KillbillHelpers::createAccount($account);
 }
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function killbill_form_user_register_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+
+  $form['killbill_account'] = array(
+    '#type' => 'details',
+    '#title' => t('KillBill settings (optional)'),
+    '#description' => t('Optional settings for KillBill account'),
+    '#open' => FALSE,
+    '#tree' => TRUE,
+    '#weight' => 10,
+  );
+
+  $form['killbill_account']['killbill_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+  );
+
+  $form['killbill_account']['killbill_address1'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Address 1'),
+  );
+
+  $form['killbill_account']['killbill_address2'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Address 2'),
+  );
+
+  $form['killbill_account']['killbill_company_name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Company name'),
+  );
+
+  $form['killbill_account']['killbill_city'] = array(
+    '#type' => 'textfield',
+    '#title' => t('City'),
+  );
+
+  $form['killbill_account']['killbill_state_or_province'] = array(
+    '#type' => 'textfield',
+    '#title' => t('State or province'),
+  );
+
+  $form['killbill_account']['killbill_country'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Country'),
+  );
+
+  $form['killbill_account']['killbill_postal_code'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Postal code'),
+  );
+
+  $form['killbill_account']['killbill_phone'] = array(
+    '#type' => 'tel',
+    '#title' => t('Phone'),
+  );
+
+  $form['actions']['submit']['#submit'][] = '_killbill_form_user_register_form_submit';
+}
+
+/**
+ * On submit process data.
+ * @param array $form
+ * @param FormStateInterface $form_state
+ */
+function _killbill_form_user_register_form_submit(array &$form, Drupal\Core\Form\FormState $form_state) {
+  /* @var $user Drupal\user\Entity\User */
+  $account = $form_state->getFormObject()->getEntity();
+  Drupal\killbill\KillbillHelpers::updateAccount($account, array(
+    'name' => $form_state->getValue('killbill_name'),
+    'address1' => $form_state->getValue('killbill_address1'),
+    'address2' => $form_state->getValue('killbill_address2'),
+    'company_name' => $form_state->getValue('killbill_company_name'),
+    'city' => $form_state->getValue('killbill_city'),
+    'state_or_province' => $form_state->getValue('killbill_state_or_province'),
+    'country' => $form_state->getValue('killbill_country'),
+    'postal_code' => $form_state->getValue('killbill_postal_code'),
+    'phone' => $form_state->getValue('killbill_phone'),
+  ));
+}

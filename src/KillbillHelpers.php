@@ -53,6 +53,7 @@ class KillbillHelpers {
    * @return boolean
    */
   static function createAccount(\Drupal\user\UserInterface $account) {
+    return;
     if (!self::clientInitialize()) {
       return FALSE;
     }
@@ -76,6 +77,25 @@ class KillbillHelpers {
 
     global $base_root;
     $accountData->create($base_root, "DRUPAL", "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp());
+  }
+
+  /**
+   * Update account
+   * @global string $base_root
+   * @param \Drupal\user\UserInterface $account
+   * @param array $properties
+   * @return boolean
+   */
+  static function updateAccount(\Drupal\user\UserInterface $account, array $properties = null) {
+    return;
+    if (!self::clientInitialize()) {
+      return FALSE;
+    }
+
+    $accountData = new \Killbill_Account();
+
+    global $base_root;
+    $accountData->update($base_root, 'DRUPAL', "DRUPAL_HOOK_FORM_USER_REGISTER_FORM_SUBMIT::" . \Drupal::request()->getClientIp());
   }
 
 }
