@@ -4,87 +4,60 @@
  * Implements hook_user_view().
  */
 function killbill_user_view(array &$build, \Drupal\user\UserInterface $account, $view_mode, $langcode) {
-    if (!$account->id() || !\Drupal::currentUser()->hasPermission('administer killbill')) {
-        return;
-    }
+  if (!$account->id() || !\Drupal::currentUser()->hasPermission('administer killbill')) {
+    return;
+  }
+  if (!($killbill_account = Drupal\killbill\KillbillHelpers::retrieveAccount($account))) {
+    return;
+  }
 
-    if (!Drupal\killbill\KillbillHelpers::clientInitialize()) {
-        return;
-    }
+  $account->content['killbill_account'] = array(
+    '#type' => 'user_profile_category',
+    '#title' => t('Killbill information'),
+    '#weight' => 0,
+  );
 
-    if (!($killbill_account = Drupal\killbill\KillbillHelpers::retrieveAccount($account))) {
-        return;
-    }
+  if (empty($killbill_account->company)) {
+    $account_holder = t('@name', array('@name' => $killbill_account->name));
+  }
+  else {
+    $account_holder = t('@name, @company', array('@name' => $killbill_account->name, '@company' => $killbill_account->company));
+  }
 
-    $account->content['killbill_account'] = array(
-        '#type' => 'user_profile_category',
-        '#title' => t('Killbill information'),
-        '#weight' => 0,
-    );
+  $account->content['killbill_account']['account_holder'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => t('Account holder'),
+    '#markup' => $account_holder,
+  );
 
-    if (empty($killbill_account->company)) {
-        $account_holder = t('@name', array('@name' => $killbill_account->name));
-    }
-    else {
-        $account_holder = t('@name, @company', array('@name' => $killbill_account->name, '@company' => $killbill_account->company));
-    }
+  $account->content['killbill_account']['account_email'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => t('Account e-mail address'),
+    '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->email),
+  );
 
-    $account->content['killbill_account']['account_holder'] = array(
-        '#type' => 'user_profile_item',
-        '#title' => t('Account holder'),
-        '#markup' => $account_holder,
-    );
+  $account->content['killbill_account']['account_currency'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => t('Account currency'),
+    '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->currency),
+  );
 
-    $account->content['killbill_account']['account_email'] = array(
-        '#type' => 'user_profile_item',
-        '#title' => t('Account e-mail address'),
-        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->email),
-    );
+  $account->content['killbill_account']['account_timeZone'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => t('Account time zone'),
+    '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->timeZone),
+  );
 
-    $account->content['killbill_account']['account_currency'] = array(
-        '#type' => 'user_profile_item',
-        '#title' => t('Account currency'),
-        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->currency),
-    );
-
-    $account->content['killbill_account']['account_timeZone'] = array(
-        '#type' => 'user_profile_item',
-        '#title' => t('Account time zone'),
-        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->timeZone),
-    );
-
-    $account->content['killbill_account']['account_kbid'] = array(
-        '#type' => 'user_profile_item',
-        '#title' => t('Killbill account id'),
-        '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->accountId),
-    );
+  $account->content['killbill_account']['account_kbid'] = array(
+    '#type' => 'user_profile_item',
+    '#title' => t('Killbill account id'),
+    '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->accountId),
+  );
 }
 
 /**
  * Implements hook_user_insert().
  */
 function killbill_user_insert(\Drupal\user\UserInterface $account) {
-    if (!Drupal\killbill\KillbillHelpers::clientInitialize()) {
-        return;
-    }
-
-    $accountData = new Killbill_Account();
-    $accountData->externalKey = $account->id();
-    $accountData->name = $account->getUsername();
-    $accountData->email = $account->getEmail();
-    $accountData->currency = 'USD';
-    $accountData->paymentMethodId = null;
-    $accountData->address1 = null;
-    $accountData->address2 = null;
-    $accountData->company = null;
-    $accountData->state = null;
-    $accountData->country = null;
-    $accountData->phone = null;
-    $accountData->length = strlen($accountData->name);
-    if (property_exists($account, 'timezone')) {
-        $accountData->timeZone = $account->timezone;
-    }
-
-    global $base_root;
-    $accountData->create($base_root, "DRUPAL", "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp());
+  Drupal\killbill\KillbillHelpers::createAccount($account);
 }
