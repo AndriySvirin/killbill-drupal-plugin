@@ -95,7 +95,7 @@ class DefaultController extends ControllerBase {
       '#rows' => $rows,
       '#empty' => $this->t('No catalog found.'),
       '#attributes' => array(
-        'id' => 'my-module-table',
+        'id' => 'killbill-catalog-table',
       ),
     );
 
