@@ -18,11 +18,17 @@ function killbill_requirements($phase) {
   return $requirements;
 }
 
+/**
+ * Implements hook_install().
+ */
 function killbill_install() {
   // Initialize the Killbill listener key variable.
   \Drupal::configFactory()->getEditable('killbill.settings')->set('listener_key', substr(\Drupal\Component\Utility\Crypt::hashBase64(REQUEST_TIME), 0, 8))->save();
 }
 
+/**
+ * Implements hook_uninstall().
+ */
 function killbill_uninstall() {
   // Remove the push notification settings.
   \Drupal::configFactory()->getEditable('killbill.settings')->clear('listener_key')->save();
