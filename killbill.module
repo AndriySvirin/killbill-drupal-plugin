@@ -1,9 +1,11 @@
 <?php
 
+use Drupal\user\UserInterface;
+
 /**
  * Implements hook_user_view().
  */
-function killbill_user_view(array &$build, \Drupal\user\UserInterface $account, $view_mode, $langcode) {
+function killbill_user_view(array &$build, UserInterface $account, $view_mode, $langcode) {
   if (!$account->id() || !\Drupal::currentUser()->hasPermission('administer killbill')) {
     return;
   }
@@ -58,7 +60,7 @@ function killbill_user_view(array &$build, \Drupal\user\UserInterface $account, 
 /**
  * Implements hook_user_insert().
  */
-function killbill_user_insert(\Drupal\user\UserInterface $account) {
+function killbill_user_insert(UserInterface $account) {
   Drupal\killbill\KillbillHelpers::createAccount($account);
 }
 
@@ -71,7 +73,7 @@ function killbill_form_user_register_form_alter(&$form, \Drupal\Core\Form\FormSt
     '#type' => 'details',
     '#title' => t('KillBill settings (optional)'),
     '#description' => t('Optional settings for KillBill account'),
-    '#open' => FALSE,
+    '#open' => TRUE,
     '#tree' => TRUE,
     '#weight' => 10,
   );
@@ -129,11 +131,11 @@ function killbill_form_user_register_form_alter(&$form, \Drupal\Core\Form\FormSt
  * @param array $form
  * @param FormStateInterface $form_state
  */
-function _killbill_form_user_register_form_submit(array &$form, Drupal\Core\Form\FormState $form_state) {
-  /* @var $user Drupal\user\Entity\User */
+function _killbill_form_user_register_form_submit(array &$form, Drupal\Core\Form\FormStateInterface $form_state) {
+  /* @var $account Drupal\user\Entity\User */
   $account = $form_state->getFormObject()->getEntity();
   Drupal\killbill\KillbillHelpers::updateAccount($account, array(
-    'name' => $form_state->getValue('killbill_name'),
+    'name' => $form_state->getValue('killbill_name') . ' | ' . $account->getUsername(),
     'address1' => $form_state->getValue('killbill_address1'),
     'address2' => $form_state->getValue('killbill_address2'),
     'company_name' => $form_state->getValue('killbill_company_name'),

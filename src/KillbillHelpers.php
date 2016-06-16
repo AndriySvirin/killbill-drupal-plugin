@@ -2,6 +2,8 @@
 
 namespace Drupal\killbill;
 
+use Drupal\user\UserInterface;
+
 /**
  * Helpers functions.
  */
@@ -12,7 +14,7 @@ class KillbillHelpers {
    * @param \Drupal\user\UserInterface $user
    * @return type
    */
-  static function retrieveAccount(\Drupal\user\UserInterface $user) {
+  static function retrieveAccount(UserInterface $user) {
     if (!self::clientInitialize()) {
       return;
     }
@@ -52,8 +54,7 @@ class KillbillHelpers {
    * @param \Drupal\user\UserInterface $account
    * @return boolean
    */
-  static function createAccount(\Drupal\user\UserInterface $account) {
-    return;
+  static function createAccount(UserInterface $account) {
     if (!self::clientInitialize()) {
       return FALSE;
     }
@@ -83,17 +84,17 @@ class KillbillHelpers {
    * Update account
    * @global string $base_root
    * @param \Drupal\user\UserInterface $account
-   * @param array $properties
+   * @param array $attributes
    * @return boolean
    */
-  static function updateAccount(\Drupal\user\UserInterface $account, array $properties = null) {
-    return;
+  static function updateAccount(UserInterface $account, array $attributes = null) {
     if (!self::clientInitialize()) {
       return FALSE;
     }
-
     $accountData = new \Killbill_Account();
-
+    foreach ($attributes as $attribute => $value) {
+      $accountData->{$attribute} = $value;
+    }
     global $base_root;
     $accountData->update($base_root, 'DRUPAL', "DRUPAL_HOOK_FORM_USER_REGISTER_FORM_SUBMIT::" . \Drupal::request()->getClientIp());
   }
