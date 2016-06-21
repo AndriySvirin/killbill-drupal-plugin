@@ -50,7 +50,6 @@ class AccountTestCase extends WebTestBase {
       'killbill_account[killbill_phone]' => '123456789',
     );
     $this->drupalPostForm('/user/register', $register, t('Create new account'));
-    $this->drupalLogout();
   }
 
 }

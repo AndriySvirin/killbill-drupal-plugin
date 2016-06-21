@@ -1,12 +1,16 @@
 killbill.settings:
-  type: mapping
+  type: config_entity
   label: Settings
   mapping:
     listener_key:
       type: string
+      label: Listener key
     server_url:
       type: string
+      label: Server url
     api_user:
       type: string
+      label: API (user)
     api_password:
       type: string
+      label: API (password)
