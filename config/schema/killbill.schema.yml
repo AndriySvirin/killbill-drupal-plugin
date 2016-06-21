@@ -8,9 +8,15 @@ killbill.settings:
     server_url:
       type: string
       label: Server url
-    api_user:
+    admin_user:
       type: string
-      label: API (user)
-    api_password:
+      label: Admin (user)
+    admin_password:
       type: string
-      label: API (password)
+      label: Admin (password)
+    api_key:
+      type: string
+      label: API (key)
+    api_secret:
+      type: string
+      label: API (secret)

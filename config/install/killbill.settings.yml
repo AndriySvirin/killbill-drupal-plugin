@@ -1,4 +1,6 @@
 listener_key: ''
 server_url: 'http://127.0.0.1:8080'
+admin_user: null
+admin_password: null
+api_key: null
 api_user: null
-api_password: null

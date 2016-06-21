@@ -26,8 +26,10 @@ class KillbillSettingsForm extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = $this->configFactory->getEditable('killbill.settings');
     $config->set('server_url', $form_state->getValue('server_url'));
-    $config->set('api_user', $form_state->getValue('api_user'));
-    $config->set('api_password', $form_state->getValue('api_password'));
+    $config->set('admin_user', $form_state->getValue('admin_user'));
+    $config->set('admin_password', $form_state->getValue('admin_password'));
+    $config->set('api_key', $form_state->getValue('api_key'));
+    $config->set('api_secret', $form_state->getValue('api_secret'));
     $config->set('listener_key', $form_state->getValue('listener_key'));
     $config->save();
 
@@ -59,17 +61,29 @@ class KillbillSettingsForm extends ConfigFormBase {
       '#description' => $this->t("The absolute URI of the Killbill server, e.g. http://127.0.0.1:8080."),
       '#default_value' => $config->get('server_url'),
     ];
-    $form['account']['api_user'] = [
+    $form['account']['admin_user'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Killbill user'),
-      '#description' => $this->t("Your Killbill user"),
-      '#default_value' => $config->get('api_user'),
+      '#title' => $this->t('Admin user'),
+      '#description' => $this->t("Your Killbill admin user"),
+      '#default_value' => $config->get('admin_user'),
     ];
-    $form['account']['api_password'] = [
+    $form['account']['admin_password'] = [
       '#type' => 'textfield',
-      '#title' => $this->t('Killbill password'),
-      '#description' => $this->t("Your Killbill password"),
-      '#default_value' => $config->get('api_password'),
+      '#title' => $this->t('Admin password'),
+      '#description' => $this->t("Your Killbill admin password"),
+      '#default_value' => $config->get('admin_password'),
+    ];
+    $form['account']['api_key'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('API key'),
+      '#description' => $this->t("Your Killbill API key"),
+      '#default_value' => $config->get('api_key'),
+    ];
+    $form['account']['api_secret'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('API secret'),
+      '#description' => $this->t("Your Killbill API secret"),
+      '#default_value' => $config->get('api_secret'),
     ];
 
     $form['push'] = [

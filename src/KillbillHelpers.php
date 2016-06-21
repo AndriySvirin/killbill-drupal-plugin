@@ -26,24 +26,15 @@ class KillbillHelpers {
   /**
    * Initialize client.
    *
-   * @param type $settings
    * @return boolean
    */
-  static function clientInitialize($settings = NULL) {
-    // If no settings array was given, use the default account settings.
-    if (empty($settings)) {
-      $settings = array(
-        'server_url' => \Drupal::config('killbill.settings')->get('server_url'),
-        'api_user' => \Drupal::config('killbill.settings')->get('api_user'),
-        'api_password' => \Drupal::config('killbill.settings')->get('api_password'),
-      );
-    }
+  static function clientInitialize() {
 
     require_once DRUPAL_ROOT . '/vendor/killbill/killbill-client-php/lib/killbill.php';
 
-    \Killbill_Client::$serverUrl = $settings['server_url'];
-    \Killbill_Client::$apiUser = $settings['api_user'];
-    \Killbill_Client::$apiPassword = $settings['api_password'];
+    \Killbill_Client::$serverUrl = \Drupal::config('killbill.settings')->get('server_url');
+    \Killbill_Client::$apiUser = \Drupal::config('killbill.settings')->get('admin_user');
+    \Killbill_Client::$apiPassword = \Drupal::config('killbill.settings')->get('admin_password');
 
     return TRUE;
   }
@@ -58,6 +49,10 @@ class KillbillHelpers {
     if (!self::clientInitialize()) {
       return FALSE;
     }
+
+    $tenant = new \Killbill_Tenant();
+    $tenant->apiKey = \Drupal::config('killbill.settings')->get('api_key');
+    $tenant->apiSecret = \Drupal::config('killbill.settings')->get('api_secret');
 
     $accountData = new \Killbill_Account();
     $accountData->externalKey = $account->id();
@@ -77,7 +72,16 @@ class KillbillHelpers {
     }
 
     global $base_root;
-    $accountData->create($base_root, "DRUPAL", "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp());
+    $accountData = $accountData->create($base_root
+        , "DRUPAL"
+        , "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp()
+        , $tenant->getTenantHeaders());
+
+    if ($accountData->accountId != null) {
+      return true;
+    }
+
+    return false;
   }
 
   /**
