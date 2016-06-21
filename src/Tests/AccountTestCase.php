@@ -36,7 +36,7 @@ class AccountTestCase extends WebTestBase {
     $name_suffix = $this->randomString(3);
     $pass = $this->randomString(10);
     $register = array(
-      'mail' => 'andriy.svirin+' . $name_suffix . '@ukrinsoft.com',
+      'mail' => 'name+' . $name_suffix . '@example.com',
       'pass[pass1]' => $pass,
       'pass[pass2]' => $pass,
       'killbill_account[killbill_name]' => 'Test name ' . $name_suffix,
