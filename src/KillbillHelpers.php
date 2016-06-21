@@ -66,7 +66,7 @@ class KillbillHelpers {
     $accountData->state = null;
     $accountData->country = null;
     $accountData->phone = null;
-    $accountData->length = strlen($accountData->name);
+    $accountData->firstNameLength = strlen($accountData->name);
     if (property_exists($account, 'timezone')) {
       $accountData->timeZone = $account->timezone;
     }
