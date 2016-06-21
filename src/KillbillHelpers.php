@@ -10,17 +10,31 @@ use Drupal\user\UserInterface;
 class KillbillHelpers {
 
   /**
+   * @type \Killbill_Tenant.
+   */
+  public $tenant;
+
+  /**
+   * Constructor
+   */
+  public function __construct() {
+    $this->clientInitialize();
+
+    $this->tenant = new \Killbill_Tenant();
+    $this->tenant->apiKey = \Drupal::config('killbill.settings')->get('api_key');
+    $this->tenant->apiSecret = \Drupal::config('killbill.settings')->get('api_secret');
+  }
+
+  /**
    * Retrive account.
    * @param \Drupal\user\UserInterface $user
-   * @return type
+   * @return \Killbill_Account
    */
-  static function retrieveAccount(UserInterface $user) {
-    if (!self::clientInitialize()) {
-      return;
-    }
+  public function retrieveAccount(UserInterface $user) {
     $killbill_account = new \Killbill_Account();
     $killbill_account->externalKey = $user->id();
-    return $killbill_account->get();
+    $account = $killbill_account->get($this->tenant->getTenantHeaders());
+    return $account;
   }
 
   /**
@@ -28,15 +42,12 @@ class KillbillHelpers {
    *
    * @return boolean
    */
-  static function clientInitialize() {
-
+  public function clientInitialize() {
     require_once DRUPAL_ROOT . '/vendor/killbill/killbill-client-php/lib/killbill.php';
 
     \Killbill_Client::$serverUrl = \Drupal::config('killbill.settings')->get('server_url');
     \Killbill_Client::$apiUser = \Drupal::config('killbill.settings')->get('admin_user');
     \Killbill_Client::$apiPassword = \Drupal::config('killbill.settings')->get('admin_password');
-
-    return TRUE;
   }
 
   /**
@@ -45,15 +56,7 @@ class KillbillHelpers {
    * @param \Drupal\user\UserInterface $account
    * @return boolean
    */
-  static function createAccount(UserInterface $account) {
-    if (!self::clientInitialize()) {
-      return FALSE;
-    }
-
-    $tenant = new \Killbill_Tenant();
-    $tenant->apiKey = \Drupal::config('killbill.settings')->get('api_key');
-    $tenant->apiSecret = \Drupal::config('killbill.settings')->get('api_secret');
-
+  public function createAccount(UserInterface $account) {
     $accountData = new \Killbill_Account();
     $accountData->externalKey = $account->id();
     $accountData->name = $account->getUsername();
@@ -75,7 +78,7 @@ class KillbillHelpers {
     $responseAccountData = $accountData->create($base_root
         , "DRUPAL"
         , "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp()
-        , $tenant->getTenantHeaders());
+        , $this->tenant->getTenantHeaders());
 
     if (is_object($responseAccountData) && $responseAccountData->accountId != null) {
       return true;
@@ -87,26 +90,27 @@ class KillbillHelpers {
   /**
    * Update account
    * @global string $base_root
-   * @param \Drupal\user\UserInterface $account
+   * @param \Drupal\user\UserInterface $user
    * @param array $attributes
    * @return boolean
    */
-  static function updateAccount(UserInterface $account, array $attributes = null) {
-    if (!self::clientInitialize()) {
-      return FALSE;
-    }
-    $accountData = new \Killbill_Account();
+  public function updateAccount(UserInterface $user, array $attributes = null) {
+    $currentAccount = $this->retrieveAccount($user);
     foreach ($attributes as $attribute => $value) {
-      $accountData->{$attribute} = $value;
+      $currentAccount->{$attribute} = $value;
     }
     global $base_root;
-    $accountData->update($base_root, 'DRUPAL', "DRUPAL_HOOK_FORM_USER_REGISTER_FORM_SUBMIT::" . \Drupal::request()->getClientIp());
+    $currentAccount->update($base_root
+        , 'DRUPAL'
+        , "DRUPAL_HOOK_FORM_USER_REGISTER_FORM_SUBMIT::" . \Drupal::request()->getClientIp()
+        , $this->tenant->getTenantHeaders());
   }
 
-  static function pushProducts() {
-    if (!self::clientInitialize()) {
-      return FALSE;
-    }
+  /**
+   * Push products
+   */
+  public function pushProducts() {
+
   }
 
 }

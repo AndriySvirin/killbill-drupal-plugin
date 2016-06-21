@@ -1,20 +1,25 @@
 <?php
 
-use Drupal\user\UserInterface;
+use Drupal\killbill\KillbillHelpers;
 
 /**
  * Implements hook_user_view().
  */
-function killbill_user_view(array &$build, UserInterface $account, $view_mode, $langcode) {
-  if (!$account->id() || !\Drupal::currentUser()->hasPermission('administer killbill')) {
+function killbill_user_view(array &$build, \Drupal\Core\Entity\EntityInterface $entity, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, $view_mode) {
+  if (!$entity->id() || !\Drupal::currentUser()->hasPermission('administer killbill')) {
     return;
   }
-  if (!($killbill_account = Drupal\killbill\KillbillHelpers::retrieveAccount($account))) {
+  $killbillHelpers = new KillbillHelpers();
+  if (!($killbill_account = $killbillHelpers->retrieveAccount($entity))) {
     return;
   }
 
-  $account->content['killbill_account'] = array(
-    '#type' => 'user_profile_category',
+//  dvm($build['summary']);
+
+
+
+  $build['killbill_account'] = array(
+    '#type' => 'fieldset',
     '#title' => t('Killbill information'),
     '#weight' => 0,
   );
@@ -26,32 +31,32 @@ function killbill_user_view(array &$build, UserInterface $account, $view_mode, $
     $account_holder = t('@name, @company', array('@name' => $killbill_account->name, '@company' => $killbill_account->company));
   }
 
-  $account->content['killbill_account']['account_holder'] = array(
-    '#type' => 'user_profile_item',
+  $build['killbill_account']['account_holder'] = array(
+    '#type' => 'item',
     '#title' => t('Account holder'),
     '#markup' => $account_holder,
   );
 
-  $account->content['killbill_account']['account_email'] = array(
-    '#type' => 'user_profile_item',
+  $build['killbill_account']['account_email'] = array(
+    '#type' => 'item',
     '#title' => t('Account e-mail address'),
     '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->email),
   );
 
-  $account->content['killbill_account']['account_currency'] = array(
-    '#type' => 'user_profile_item',
+  $build['killbill_account']['account_currency'] = array(
+    '#type' => 'item',
     '#title' => t('Account currency'),
     '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->currency),
   );
 
-  $account->content['killbill_account']['account_timeZone'] = array(
-    '#type' => 'user_profile_item',
+  $build['killbill_account']['account_timeZone'] = array(
+    '#type' => 'item',
     '#title' => t('Account time zone'),
     '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->timeZone),
   );
 
-  $account->content['killbill_account']['account_kbid'] = array(
-    '#type' => 'user_profile_item',
+  $build['killbill_account']['account_kbid'] = array(
+    '#type' => 'item',
     '#title' => t('Killbill account id'),
     '#markup' => \Drupal\Component\Utility\SafeMarkup::checkPlain($killbill_account->accountId),
   );
@@ -60,8 +65,9 @@ function killbill_user_view(array &$build, UserInterface $account, $view_mode, $
 /**
  * Implements hook_user_insert().
  */
-function killbill_user_insert(UserInterface $account) {
-  if (Drupal\killbill\KillbillHelpers::createAccount($account)) {
+function killbill_user_insert(\Drupal\user\Entity\User $account) {
+  $killbillHelpers = new KillbillHelpers();
+  if ($killbillHelpers->createAccount($account)) {
     $message = t('Billing account was created.');
     drupal_set_message($message, 'status');
     \Drupal::logger('killbill')->notice($message);
@@ -141,18 +147,20 @@ function killbill_form_user_register_form_alter(&$form, \Drupal\Core\Form\FormSt
  * @param FormStateInterface $form_state
  */
 function _killbill_form_user_register_form_submit(array &$form, Drupal\Core\Form\FormStateInterface $form_state) {
-  /* @var $account Drupal\user\Entity\User */
-  $account = $form_state->getFormObject()->getEntity();
-  Drupal\killbill\KillbillHelpers::updateAccount($account, array(
-    'name' => $form_state->getValue('killbill_name') . ' | ' . $account->getUsername(),
-    'firstNameLength' => strlen($form_state->getValue('killbill_name') . ' | ' . $account->getUsername()),
-    'address1' => $form_state->getValue('killbill_address1'),
-    'address2' => $form_state->getValue('killbill_address2'),
-    'company_name' => $form_state->getValue('killbill_company_name'),
-    'city' => $form_state->getValue('killbill_city'),
-    'state_or_province' => $form_state->getValue('killbill_state_or_province'),
-    'country' => $form_state->getValue('killbill_country'),
-    'postal_code' => $form_state->getValue('killbill_postal_code'),
-    'phone' => $form_state->getValue('killbill_phone'),
+  /* @var $account \Drupal\user\Entity\User */
+  $user = $form_state->getFormObject()->getEntity();
+  $killbill_account = $form_state->getValue('killbill_account');
+  $killbillHelpers = new KillbillHelpers();
+  $killbillHelpers->updateAccount($user, array(
+    'name' => $killbill_account['killbill_name'] . ' | ' . $user->getUsername(),
+    'firstNameLength' => strlen($killbill_account['killbill_name'] . ' | ' . $user->getUsername()),
+    'address1' => $killbill_account['killbill_address1'],
+    'address2' => $killbill_account['killbill_address2'],
+    'company_name' => $killbill_account['killbill_company_name'],
+    'city' => $killbill_account['killbill_city'],
+    'state_or_province' => $killbill_account['killbill_state_or_province'],
+    'country' => $killbill_account['killbill_country'],
+    'postal_code' => $killbill_account['killbill_postal_code'],
+    'phone' => $killbill_account['killbill_phone'],
   ));
 }
