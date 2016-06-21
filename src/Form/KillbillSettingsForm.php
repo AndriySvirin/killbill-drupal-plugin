@@ -42,6 +42,9 @@ class KillbillSettingsForm extends ConfigFormBase {
     return ['killbill.settings'];
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function buildForm(array $form, \Drupal\Core\Form\FormStateInterface $form_state) {
     $config = $this->configFactory->get('killbill.settings');
 
@@ -90,12 +93,6 @@ class KillbillSettingsForm extends ConfigFormBase {
         'key' => '%'
           ), array('absolute' => TRUE)),
     );
-
-    $form['push']['push_logging'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Log authenticated incoming push notifications (primarily used for debugging purposes).'),
-      '#default_value' => $config->get('push_logging'),
-    ];
 
     return parent::buildForm($form, $form_state);
   }
