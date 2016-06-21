@@ -99,4 +99,10 @@ class KillbillHelpers {
     $accountData->update($base_root, 'DRUPAL', "DRUPAL_HOOK_FORM_USER_REGISTER_FORM_SUBMIT::" . \Drupal::request()->getClientIp());
   }
 
+  static function pushProducts() {
+    if (!self::clientInitialize()) {
+      return FALSE;
+    }
+  }
+
 }
