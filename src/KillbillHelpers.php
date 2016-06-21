@@ -72,12 +72,12 @@ class KillbillHelpers {
     }
 
     global $base_root;
-    $accountData = $accountData->create($base_root
+    $responseAccountData = $accountData->create($base_root
         , "DRUPAL"
         , "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp()
         , $tenant->getTenantHeaders());
 
-    if ($accountData->accountId != null) {
+    if (is_object($responseAccountData) && $responseAccountData->accountId != null) {
       return true;
     }
 

@@ -61,7 +61,12 @@ function killbill_user_view(array &$build, UserInterface $account, $view_mode, $
  * Implements hook_user_insert().
  */
 function killbill_user_insert(UserInterface $account) {
-  if (!Drupal\killbill\KillbillHelpers::createAccount($account)) {
+  if (Drupal\killbill\KillbillHelpers::createAccount($account)) {
+    $message = t('Billing account was created.');
+    drupal_set_message($message, 'status');
+    \Drupal::logger('killbill')->notice($message);
+  }
+  else {
     $message = t('Billing account was not created.');
     drupal_set_message($message, 'error');
     \Drupal::logger('killbill')->error($message);

@@ -33,10 +33,11 @@ class AccountTestCase extends WebTestBase {
         ->set('register', USER_REGISTER_VISITORS)
         ->save();
     // Try to register a user.
-    $name_suffix = $this->randomString(3);
+    $name_suffix = rand(1, 100);
     $pass = $this->randomString(10);
     $register = array(
-      'mail' => 'name+' . $name_suffix . '@example.com',
+      'mail' => 'name-' . $name_suffix . '@example.com',
+      'name' => 'name_' . $name_suffix,
       'pass[pass1]' => $pass,
       'pass[pass2]' => $pass,
       'killbill_account[killbill_name]' => 'Test name ' . $name_suffix,
@@ -50,6 +51,8 @@ class AccountTestCase extends WebTestBase {
       'killbill_account[killbill_phone]' => '123456789',
     );
     $this->drupalPostForm('/user/register', $register, t('Create new account'));
+
+    $this->assertRaw(t('Billing account was created.'), t('User properly created in killbill.'));
   }
 
 }
