@@ -29,7 +29,6 @@ class KillbillSettingsForm extends ConfigFormBase {
     $config->set('api_user', $form_state->getValue('api_user'));
     $config->set('api_password', $form_state->getValue('api_password'));
     $config->set('listener_key', $form_state->getValue('listener_key'));
-    $config->set('push_logging', $form_state->getValue('push_logging'));
     $config->save();
 
     parent::submitForm($form, $form_state);

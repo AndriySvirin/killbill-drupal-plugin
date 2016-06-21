@@ -4,8 +4,6 @@ killbill.settings:
   mapping:
     listener_key:
       type: string
-    push_logging:
-      type: boolean
     server_url:
       type: string
     api_user:
