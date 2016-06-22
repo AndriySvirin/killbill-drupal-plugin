@@ -107,10 +107,104 @@ class KillbillHelpers {
   }
 
   /**
-   * Push products
+   * Get Products.
+   *
+   * @return array
    */
-  public function pushProducts() {
+  public function getProducts() {
+    $catalog = new \Killbill_Catalog;
+    $catalog->initialize($this->tenant->getTenantHeaders());
 
+    return $catalog->getBaseProducts();
+  }
+
+  /**
+   * Update catalog
+   * @global string $base_root
+   * @param array $data
+   */
+  public function setCatalog($data) {
+    $catalogModel = new \Killbill_CatalogModel();
+    $catalogModel->schema = 'http://docs.killbill.io/0.16/catalog.xsd';
+    $catalogModel->effectiveDate = time();
+    $catalogModel->catalogName = $data['catalogName'];
+    $catalogModel->recurringBillingMode = $data['recurringBillingMode'];
+    foreach ($data['currencies'] as $currency) {
+      $catalogModel->currencies[] = new \Killbill_CatalogModel_Currency($currency);
+    }
+    foreach ($data['products'] as $product) {
+      $killbillProduct = new \Killbill_CatalogModel_Product($product);
+      $catalogModel->products[$killbillProduct->getId()] = $killbillProduct;
+    }
+
+    foreach ($data['plans'] as $plan) {
+      $productId = \Killbill_CatalogModel_Helpers::strToId($plan['product']);
+      if (!empty($plan['finalPhase']['recurring'])) {
+        $recurring = new \Killbill_CatalogModel_PlanPhase_Recurring(
+            $plan['finalPhase']['recurring']['billingPeriod']
+            , new \Killbill_CatalogModel_Price(
+            $plan['finalPhase']['recurring']['recurringPrice']['currency']
+            , $plan['finalPhase']['recurring']['recurringPrice']['value']
+        ));
+      }
+      else {
+        $recurring = null;
+      }
+      $killbillPlan = new \Killbill_CatalogModel_Plan(
+          $plan['name']
+          , $catalogModel->products[$productId]
+          , new \Killbill_CatalogModel_PlanPhase(
+          $plan['finalPhase']['type']
+          , new \Killbill_CatalogModel_PlanPhase_Duration(
+          $plan['finalPhase']['duration']['unit'])
+          , $recurring));
+      $catalogModel->plans[$killbillPlan->getId()] = $killbillPlan;
+    }
+
+    foreach ($data['priceLists'] as $priceList) {
+      $plans = [];
+      foreach ($priceList['plans'] as $plan) {
+        $planId = \Killbill_CatalogModel_Helpers::strToId($plan);
+        $plans[] = $catalogModel->plans[$planId];
+      }
+      $catalogModel->priceLists[] = new \Killbill_CatalogModel_PriceList(
+          $priceList['name']
+          , $plans
+          , $priceList['type']);
+    }
+
+//    dpm($catalogModel);
+//    dpm(htmlspecialchars($catalogModel->toDOM()->saveXML()));
+
+    $errors = $catalogModel->validate();
+    if (!empty($errors)) {
+      drupal_set_message("Catalog is invalid.", 'error');
+      foreach ($errors as $error) {
+        $m = t('XML error "!message" [!level] (Code !code) in !file on line !line column !column', array(
+          '!message' => $error->message,
+          '!level' => $error->level,
+          '!code' => $error->code,
+          '!file' => $error->file,
+          '!line' => $error->line,
+          '!column' => $error->column,
+        ));
+        drupal_set_message($m, 'error');
+      }
+    }
+    else {
+      global $base_root;
+      $catalog = new \Killbill_Catalog;
+      $catalog->xmlDOM = $catalogModel->toDOM();
+      /* @var $response \Killbill_Response */
+      $response = $catalog->setFullCatalog($base_root
+          , 'DRUPAL'
+          , "DRUPAL_UPDATE_CATLOG::" . \Drupal::request()->getClientIp()
+          , $this->tenant->getTenantHeaders());
+
+      if ($response->statusCode == 201) {
+        drupal_set_message('Updated catalog success');
+      }
+    }
   }
 
 }

@@ -49,28 +49,26 @@ class DefaultController extends ControllerBase {
   }
 
   public function catalog() {
-    if (!\Drupal\killbill\KillbillHelpers::clientInitialize()) {
+    if (!$killbillHelpers = new \Drupal\killbill\KillbillHelpers()) {
       $output['status'] = array(
         '#plain_text' => t('Could not initialize the Killbill client.'),
       );
       return $output;
     }
 
-    $catalog = new \Killbill_Catalog;
-    $catalog->initialize();
-
     $header = [
       t('Product name'),
       t('Product type'),
       t('Plan name'),
       t('Phase type'),
-      t('Price in USD'),
+      t('Price'),
     ];
     $rows = [];
 
-    $currency = 'USD';
-    foreach ($catalog->getBaseProducts() as $product) {
-      foreach ($product->plans as $plan) {
+    $products = $killbillHelpers->getProducts();
+    if (is_array($products))
+      foreach ($products as $product) {
+        foreach ($product->plans as $plan) {
         foreach ($plan->phases as $phase) {
           $rows[] = [
             t('@name', ['@name' => $product->name]),
@@ -82,8 +80,8 @@ class DefaultController extends ControllerBase {
               '@phase' => $phase->type
             ]),
             t('@price', [
-              '@price' => '$' . number_format($phase->prices->$currency, 2)
-            ]),
+              '@price' => $phase->prices[0]->currency . ' ' . number_format($phase->prices[0]->value, 2)
+              ]),
           ];
         }
       }
