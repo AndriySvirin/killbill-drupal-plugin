@@ -14,10 +14,6 @@ function killbill_user_view(array &$build, \Drupal\Core\Entity\EntityInterface $
     return;
   }
 
-//  dvm($build['summary']);
-
-
-
   $build['killbill_account'] = array(
     '#type' => 'fieldset',
     '#title' => t('Killbill information'),
@@ -152,8 +148,8 @@ function _killbill_form_user_register_form_submit(array &$form, Drupal\Core\Form
   $killbill_account = $form_state->getValue('killbill_account');
   $killbillHelpers = new KillbillHelpers();
   $killbillHelpers->updateAccount($user, array(
-    'name' => $killbill_account['killbill_name'] . ' | ' . $user->getUsername(),
-    'firstNameLength' => strlen($killbill_account['killbill_name'] . ' | ' . $user->getUsername()),
+    'name' => ($killbill_account['killbill_name'] !== '' ? $killbill_account['killbill_name'] . ' | ' : '') . $user->getUsername(),
+    'firstNameLength' => strlen(($killbill_account['killbill_name'] !== '' ? $killbill_account['killbill_name'] . ' | ' : '') . $user->getUsername()),
     'address1' => $killbill_account['killbill_address1'],
     'address2' => $killbill_account['killbill_address2'],
     'company_name' => $killbill_account['killbill_company_name'],

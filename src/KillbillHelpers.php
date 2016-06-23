@@ -75,16 +75,18 @@ class KillbillHelpers {
     }
 
     global $base_root;
-    $responseAccountData = $accountData->create($base_root
+    $response = $accountData->create($base_root
         , "DRUPAL"
         , "DRUPAL_HOOK_USER_INSERT::" . \Drupal::request()->getClientIp()
         , $this->tenant->getTenantHeaders());
 
-    if (is_object($responseAccountData) && $responseAccountData->accountId != null) {
+    if ($response instanceof \Killbill_Account) {
       return true;
     }
-
-    return false;
+    else {
+      \Drupal::logger('killbill')->notice(json_encode($response));
+      return false;
+    }
   }
 
   /**
@@ -122,8 +124,11 @@ class KillbillHelpers {
    * Update catalog
    * @global string $base_root
    * @param array $data
+   *
+   * @return array
    */
   public function setCatalog($data) {
+    $output = [];
     $catalogModel = new \Killbill_CatalogModel();
     $catalogModel->schema = 'http://docs.killbill.io/0.16/catalog.xsd';
     $catalogModel->effectiveDate = time();
@@ -173,14 +178,11 @@ class KillbillHelpers {
           , $priceList['type']);
     }
 
-//    dpm($catalogModel);
-//    dpm(htmlspecialchars($catalogModel->toDOM()->saveXML()));
-
     $errors = $catalogModel->validate();
     if (!empty($errors)) {
-      drupal_set_message("Catalog is invalid.", 'error');
+      $output[] = 'Catalog is invalid.';
       foreach ($errors as $error) {
-        $m = t('XML error "!message" [!level] (Code !code) in !file on line !line column !column', array(
+        $output[] = t('XML error "!message" [!level] (Code !code) in !file on line !line column !column .', array(
           '!message' => $error->message,
           '!level' => $error->level,
           '!code' => $error->code,
@@ -188,23 +190,25 @@ class KillbillHelpers {
           '!line' => $error->line,
           '!column' => $error->column,
         ));
-        drupal_set_message($m, 'error');
       }
     }
     else {
       global $base_root;
       $catalog = new \Killbill_Catalog;
-      $catalog->xmlDOM = $catalogModel->toDOM();
       /* @var $response \Killbill_Response */
-      $response = $catalog->setFullCatalog($base_root
+      $response = $catalog->setFullCatalog(
+          $catalogModel->toDOM()
+          , $base_root
           , 'DRUPAL'
           , "DRUPAL_UPDATE_CATLOG::" . \Drupal::request()->getClientIp()
           , $this->tenant->getTenantHeaders());
 
-      if ($response->statusCode == 201) {
-        drupal_set_message('Updated catalog success');
+      if (!$response->statusCode == 201) {
+        $output[] = 'Updated catalog fail.';
       }
     }
+
+    return $output;
   }
 
 }
