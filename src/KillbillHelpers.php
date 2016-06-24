@@ -265,6 +265,7 @@ class KillbillHelpers {
     foreach ($usages as $usage) {
       $usageId = \Killbill_CatalogModel_Helpers::strToId($usage['name']);
       $limits = !empty($usage['limits']) ? $this->_setCatalogPlansGetUsagesGetLimits($catalogModel, $usage['limits']) : null;
+      $blocks = !empty($usage['blocks']) ? $this->_setCatalogPlansGetUsagesGetBlocks($catalogModel, $usage['blocks']) : null;
       $recurringPrice = !empty($usage['recurringPrice']) ? $this->_setCatalogPlansGetUsagesGetRecurringPrice($usage['recurringPrice']) : null;
       $output[$usageId] = new \Killbill_CatalogModel_PlanPhase_Usage(
           $usage['name']
@@ -272,6 +273,7 @@ class KillbillHelpers {
           , $usage['usageType']
           , isset($usage['billingPeriod']) ? $usage['billingPeriod'] : null
           , $limits
+          , $blocks
           , $recurringPrice
       );
     }
@@ -294,6 +296,30 @@ class KillbillHelpers {
       $min = !empty($limit['min']) ? $limit['min'] : null;
       $max = !empty($limit['max']) ? $limit['max'] : null;
       $output[] = new \Killbill_CatalogModel_Limit($catalogModel->units[$unitId], $min, $max);
+    }
+
+    return $output;
+  }
+
+  /**
+   * Get blocks
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $blocks
+   *
+   * @return array
+   */
+  private function _setCatalogPlansGetUsagesGetBlocks(\Killbill_CatalogModel $catalogModel, array $blocks) {
+    $output = [];
+    foreach ($blocks as $block) {
+      $unitId = \Killbill_CatalogModel_Helpers::strToId($block['unit']);
+      $prices = $this->_setCatalogPlansGetUsagesGetRecurringPrice($block['prices']);
+      $output[] = new \Killbill_CatalogModel_Block(
+          $block['type']
+          , $catalogModel->units[$unitId]
+          , $block['size']
+          , $prices
+      );
     }
 
     return $output;
