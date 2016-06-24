@@ -122,6 +122,7 @@ class KillbillHelpers {
 
   /**
    * Update catalog
+   *
    * @global string $base_root
    * @param array $data
    *
@@ -134,49 +135,13 @@ class KillbillHelpers {
     $catalogModel->effectiveDate = time();
     $catalogModel->catalogName = $data['catalogName'];
     $catalogModel->recurringBillingMode = $data['recurringBillingMode'];
-    foreach ($data['currencies'] as $currency) {
-      $catalogModel->currencies[] = new \Killbill_CatalogModel_Currency($currency);
+    $this->_setCatalogCurrencies($catalogModel, $data['currencies']);
+    if (!empty($data['units'])) {
+      $this->_setCatalogUnits($catalogModel, $data['units']);
     }
-    foreach ($data['products'] as $product) {
-      $killbillProduct = new \Killbill_CatalogModel_Product($product);
-      $catalogModel->products[$killbillProduct->getId()] = $killbillProduct;
-    }
-
-    foreach ($data['plans'] as $plan) {
-      $productId = \Killbill_CatalogModel_Helpers::strToId($plan['product']);
-      if (!empty($plan['finalPhase']['recurring'])) {
-        $recurring = new \Killbill_CatalogModel_PlanPhase_Recurring(
-            $plan['finalPhase']['recurring']['billingPeriod']
-            , new \Killbill_CatalogModel_Price(
-            $plan['finalPhase']['recurring']['recurringPrice']['currency']
-            , $plan['finalPhase']['recurring']['recurringPrice']['value']
-        ));
-      }
-      else {
-        $recurring = null;
-      }
-      $killbillPlan = new \Killbill_CatalogModel_Plan(
-          $plan['name']
-          , $catalogModel->products[$productId]
-          , new \Killbill_CatalogModel_PlanPhase(
-          $plan['finalPhase']['type']
-          , new \Killbill_CatalogModel_PlanPhase_Duration(
-          $plan['finalPhase']['duration']['unit'])
-          , $recurring));
-      $catalogModel->plans[$killbillPlan->getId()] = $killbillPlan;
-    }
-
-    foreach ($data['priceLists'] as $priceList) {
-      $plans = [];
-      foreach ($priceList['plans'] as $plan) {
-        $planId = \Killbill_CatalogModel_Helpers::strToId($plan);
-        $plans[] = $catalogModel->plans[$planId];
-      }
-      $catalogModel->priceLists[] = new \Killbill_CatalogModel_PriceList(
-          $priceList['name']
-          , $plans
-          , $priceList['type']);
-    }
+    $this->_setCatalogProducts($catalogModel, $data['products']);
+    $this->_setCatalogPlans($catalogModel, $data['plans']);
+    $this->_setCatalogPriceLists($catalogModel, $data['priceLists']);
 
     $errors = $catalogModel->validate();
     if (!empty($errors)) {
@@ -209,6 +174,169 @@ class KillbillHelpers {
     }
 
     return $output;
+  }
+
+  /**
+   * Set currencies
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $currencies
+   */
+  private function _setCatalogCurrencies(\Killbill_CatalogModel $catalogModel, array $currencies) {
+    foreach ($currencies as $currency) {
+      $catalogModel->currencies[] = new \Killbill_CatalogModel_Currency($currency);
+    }
+  }
+
+  /**
+   * Set units
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $units
+   */
+  private function _setCatalogUnits(\Killbill_CatalogModel $catalogModel, array $units) {
+    foreach ($units as $unit) {
+      $killbillUnit = new \Killbill_CatalogModel_Unit($unit);
+      $catalogModel->units[$killbillUnit->getId()] = $killbillUnit;
+    }
+  }
+
+  /**
+   * Set products
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $products
+   */
+  private function _setCatalogProducts(\Killbill_CatalogModel $catalogModel, array $products) {
+    foreach ($products as $product) {
+      $killbillProduct = new \Killbill_CatalogModel_Product($product);
+      $catalogModel->products[$killbillProduct->getId()] = $killbillProduct;
+    }
+  }
+
+  /**
+   * Set plans
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $plans
+   */
+  private function _setCatalogPlans(\Killbill_CatalogModel $catalogModel, array $plans) {
+    foreach ($plans as $plan) {
+      $productId = \Killbill_CatalogModel_Helpers::strToId($plan['product']);
+      $recurring = !empty($plan['finalPhase']['recurring']) ? $this->_setCatalogPlansGetRecurring($plan['finalPhase']['recurring']) : null;
+      $usages = !empty($plan['finalPhase']['usages']) ? $this->_setCatalogPlansGetUsages($catalogModel, $plan['finalPhase']['usages']) : null;
+      $killbillPlan = new \Killbill_CatalogModel_Plan(
+          $plan['name']
+          , $catalogModel->products[$productId]
+          , new \Killbill_CatalogModel_PlanPhase(
+          $plan['finalPhase']['type']
+          , new \Killbill_CatalogModel_PlanPhase_Duration(
+          $plan['finalPhase']['duration']['unit'])
+          , $recurring, $usages));
+      $catalogModel->plans[$killbillPlan->getId()] = $killbillPlan;
+    }
+  }
+
+  /**
+   * Get recurring
+   *
+   * @return \Killbill_CatalogModel_PlanPhase_Recurring
+   */
+  private function _setCatalogPlansGetRecurring($recurring) {
+    $recurringPrice = !empty($recurring['recurringPrice']) ? $this->_setCatalogPlansGetUsagesGetRecurringPrice($recurring['recurringPrice']) : null;
+
+    $output = new \Killbill_CatalogModel_PlanPhase_Recurring(
+        $recurring['billingPeriod']
+        , $recurringPrice);
+
+    return $output;
+  }
+
+  /**
+   * Get usages
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $usages
+   *
+   * @return \Killbill_CatalogModel_PlanPhase_Usage[]
+   */
+  private function _setCatalogPlansGetUsages(\Killbill_CatalogModel $catalogModel, array $usages) {
+    $output = [];
+    foreach ($usages as $usage) {
+      $usageId = \Killbill_CatalogModel_Helpers::strToId($usage['name']);
+      $limits = !empty($usage['limits']) ? $this->_setCatalogPlansGetUsagesGetLimits($catalogModel, $usage['limits']) : null;
+      $recurringPrice = !empty($usage['recurringPrice']) ? $this->_setCatalogPlansGetUsagesGetRecurringPrice($usage['recurringPrice']) : null;
+      $output[$usageId] = new \Killbill_CatalogModel_PlanPhase_Usage(
+          $usage['name']
+          , $usage['billingMode']
+          , $usage['usageType']
+          , isset($usage['billingPeriod']) ? $usage['billingPeriod'] : null
+          , $limits
+          , $recurringPrice
+      );
+    }
+
+    return $output;
+  }
+
+  /**
+   * Get limits
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $limits
+   *
+   * @return array
+   */
+  private function _setCatalogPlansGetUsagesGetLimits(\Killbill_CatalogModel $catalogModel, array $limits) {
+    $output = [];
+    foreach ($limits as $limit) {
+      $unitId = \Killbill_CatalogModel_Helpers::strToId($limit['unit']);
+      $min = !empty($limit['min']) ? $limit['min'] : null;
+      $max = !empty($limit['max']) ? $limit['max'] : null;
+      $output[] = new \Killbill_CatalogModel_Limit($catalogModel->units[$unitId], $min, $max);
+    }
+
+    return $output;
+  }
+
+  /**
+   * Get recurringPrice
+   *
+   * @param array $recurringPrice
+   *
+   * @return array
+   */
+  private function _setCatalogPlansGetUsagesGetRecurringPrice(array $recurringPrice) {
+    $output = [];
+
+    foreach ($recurringPrice as $price) {
+      $output[] = new \Killbill_CatalogModel_Price(
+          $price['currency']
+          , $price['value']
+      );
+    }
+
+    return $output;
+  }
+
+  /**
+   * Set priceLists
+   *
+   * @param \Killbill_CatalogModel $catalogModel
+   * @param array $priceLists
+   */
+  private function _setCatalogPriceLists(\Killbill_CatalogModel $catalogModel, array $priceLists) {
+    foreach ($priceLists as $priceList) {
+      $plans = [];
+      foreach ($priceList['plans'] as $plan) {
+        $planId = \Killbill_CatalogModel_Helpers::strToId($plan);
+        $plans[] = $catalogModel->plans[$planId];
+      }
+      $catalogModel->priceLists[] = new \Killbill_CatalogModel_PriceList(
+          $priceList['name']
+          , $plans
+          , $priceList['type']);
+    }
   }
 
 }
